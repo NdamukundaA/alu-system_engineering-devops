@@ -38,8 +38,8 @@ frontend http-in
 
 backend servers
     balance roundrobin
-    server web-01 3.95.37.7 check
-    server web-02 3.93.68.73 check
+    server web-01 3.95.37.7:80 check
+    server web-02 3.93.68.73:80 check
 
 # Enable stats page (optional for monitoring)
 listen stats
@@ -57,4 +57,4 @@ sudo systemctl restart haproxy
 sudo systemctl status haproxy
 
 # Test the load balancer by sending a request to the load balancer IP
-curl -Is http://YOUR_LOAD_BALANCER_IP
+curl -Is http://18.205.19.44
