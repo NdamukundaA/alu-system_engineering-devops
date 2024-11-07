@@ -38,8 +38,8 @@ frontend http-in
 
 backend servers
     balance roundrobin
-    server web-01 192.168.1.101:80 check
-    server web-02 192.168.1.102:80 check
+    server web-01 3.95.37.7 check
+    server web-02 3.93.68.73 check
 
 # Enable stats page (optional for monitoring)
 listen stats
