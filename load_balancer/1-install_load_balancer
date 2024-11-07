@@ -1,16 +1,47 @@
-#!/usr/bin/env bash
-#Bash script that installs HAProxy & makes configurations
+#!/bin/bash
 
-apt-get -y install software-properties-common
-add-apt-repository ppa:vbernat/haproxy-1.8
-apt-get update
-apt-get -y install haproxy
-echo "ENABLED=1" >> /etc/default/haproxy
-printf %s "listen 5819-webs
+# Update and install necessary packages
+sudo apt-get update -y
+sudo apt-get install -y haproxy
+
+# Configure HAProxy to distribute traffic using round-robin
+cat > /etc/haproxy/haproxy.cfg << EOF
+global
+    log /dev/log   local0
+    log /dev/log   local1 notice
+    maxconn 200
+
+defaults
+    log     global
+    option  httplog
+    option  dontlognull
+    timeout connect 5000ms
+    timeout client  50000ms
+    timeout server  50000ms
+
+frontend http_front
     bind *:80
-    mode http
+    default_backend http_back
+
+backend http_back
     balance roundrobin
-    server 5955-web-01 54.152.43.54:80 check
-    server 5955-web-02 52.91.215.78:80 check
-" >> /etc/haproxy/haproxy.cfg
-sudo service haproxy restart
+    server web-01 192.168.1.101:80 check
+    server web-02 192.168.1.102:80 check
+EOF
+
+# Make sure the hostname is correct for lb-01
+hostnamectl set-hostname lb-01
+
+# Enable and start HAProxy
+sudo systemctl enable haproxy
+sudo systemctl start haproxy
+
+# Check HAProxy status
+sudo systemctl status haproxy
+
+# Configure the system to ensure proper hostname resolution
+echo "192.168.1.101 web-01" >> /etc/hosts
+echo "192.168.1.102 web-02" >> /etc/hosts
+
+# Output confirmation message
+echo "HAProxy is successfully installed and configured. Load balancing is set up between web-01 and web-02."
