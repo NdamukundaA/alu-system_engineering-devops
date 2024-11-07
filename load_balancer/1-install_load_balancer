@@ -1,15 +1,28 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
-# Update and install necessary packages
-sudo apt-get update -y
-sudo apt-get install -y haproxy
+# Update and upgrade the system
+sudo apt update -y
+sudo apt upgrade -y
 
-# Configure HAProxy to distribute traffic using round-robin
-cat > /etc/haproxy/haproxy.cfg << EOF
+# Install HAProxy
+sudo apt install -y haproxy
+
+# Enable HAProxy to start on boot
+sudo systemctl enable haproxy
+
+# Backup the original HAProxy configuration file
+sudo cp /etc/haproxy/haproxy.cfg /etc/haproxy/haproxy.cfg.bak
+
+# Configure HAProxy for round-robin load balancing
+cat <<EOL | sudo tee /etc/haproxy/haproxy.cfg
 global
-    log /dev/log   local0
-    log /dev/log   local1 notice
-    maxconn 200
+    log /dev/log    local0
+    log /dev/log    local1 notice
+    chroot /var/lib/haproxy
+    stats timeout 30s
+    user haproxy
+    group haproxy
+    daemon
 
 defaults
     log     global
@@ -19,29 +32,29 @@ defaults
     timeout client  50000ms
     timeout server  50000ms
 
-frontend http_front
+frontend http-in
     bind *:80
-    default_backend http_back
+    default_backend servers
 
-backend http_back
+backend servers
     balance roundrobin
     server web-01 192.168.1.101:80 check
     server web-02 192.168.1.102:80 check
-EOF
 
-# Make sure the hostname is correct for lb-01
-hostnamectl set-hostname lb-01
+# Enable stats page (optional for monitoring)
+listen stats
+    bind *:8404
+    stats enable
+    stats uri /stats
+    stats realm Haproxy\ Statistics
+    stats auth admin:admin
+EOL
 
-# Enable and start HAProxy
-sudo systemctl enable haproxy
-sudo systemctl start haproxy
+# Reload HAProxy to apply the new configuration
+sudo systemctl restart haproxy
 
-# Check HAProxy status
+# Verify HAProxy status
 sudo systemctl status haproxy
 
-# Configure the system to ensure proper hostname resolution
-echo "192.168.1.101 web-01" >> /etc/hosts
-echo "192.168.1.102 web-02" >> /etc/hosts
-
-# Output confirmation message
-echo "HAProxy is successfully installed and configured. Load balancing is set up between web-01 and web-02."
+# Test the load balancer by sending a request to the load balancer IP
+curl -Is http://YOUR_LOAD_BALANCER_IP
