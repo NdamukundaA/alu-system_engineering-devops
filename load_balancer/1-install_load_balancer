@@ -15,14 +15,14 @@ sudo cp /etc/haproxy/haproxy.cfg /etc/haproxy/haproxy.cfg.bak
 # sudo truncate -s 0 /etc/haproxy/haproxy.cfg
 
 # Check if the configuration for frontend and backend exists
-if ! grep -q "frontend sarah-frontend" /etc/haproxy/haproxy.cfg; then
+if ! grep -q "frontend Allan-frontend" /etc/haproxy/haproxy.cfg; then
     # Add frontend and backend configuration
     server_config="frontend sarah-frontend
         bind *:80
         mode http
-        default_backend sarah-backend
+        default_backend Allan-backend
 
-    backend sarah-backend
+    backend Allan-backend
         balance roundrobin
         server 6342-web-01 34.204.44.250:80 check
         server 6342-web-02 34.234.75.159:80 check"
